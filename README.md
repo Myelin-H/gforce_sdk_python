@@ -8,12 +8,12 @@ With pip:
 
 ```sh
 pip install -r requirements.txt
-python src/gforce_sdk/gforce_sdk.py
+python src/gforce_sdk/lib.py
 ```
 
 With pdm:
 
 ```sh
 pdm install
-pdm run python src/gforce_sdk/gforce_sdk.py
+pdm run python src/gforce_sdk/lib.py
 ```
