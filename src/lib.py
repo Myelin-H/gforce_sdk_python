@@ -218,6 +218,7 @@ class Gforce:
         self.cmd_char = None
         self.data_char = None
         self.responses: Dict[Command, Queue] = {}
+        self.resolution = SampleResolution.BITS_12
 
         self.packet_id = 0
         self.data_packet = []
@@ -270,7 +271,7 @@ class Gforce:
         packet = full_packet[1:]
         match data_type:
             case DataType.EMG_ADC:
-                data = self._convert_emg_to_uv(full_packet[1:], 12)
+                data = self._convert_emg_to_uv(packet)
 
             case DataType.ACC:
                 data = self._convert_acceleration_to_g(packet)
@@ -306,22 +307,21 @@ class Gforce:
 
         q.put_nowait(data)
 
-    @staticmethod
-    def _convert_emg_to_uv(data: bytes, resolution: int) -> np.ndarray[np.float32]:
+    def _convert_emg_to_uv(self, data: bytes) -> np.ndarray[np.float32]:
         min_voltage = -1.25
         max_voltage = 1.25
 
-        match resolution:
-            case 8:
+        match self.resolution:
+            case SampleResolution.BITS_8:
                 dtype = np.uint8
                 div = 127.0
                 sub = 128
-            case 12:
+            case SampleResolution.BITS_12:
                 dtype = np.uint16
                 div = 2047.0
                 sub = 2048
             case _:
-                raise Exception(f"Unknown resolution {resolution}")
+                raise Exception(f"Unsupported resolution {self.resolution}")
 
         gain = 1200.0
         conversion_factor = (max_voltage - min_voltage) / gain / div
@@ -568,6 +568,7 @@ class Gforce:
             body=body,
             has_res=True,
         ))
+        self.resolution = cfg.resolution
 
     async def get_emg_raw_data_config(self) -> EmgRawDataConfig:
         buf = await self._send_request(Request(
@@ -641,6 +642,7 @@ async def main():
     gforce = Gforce()
 
     await gforce.connect()
+    await gforce.set_emg_raw_data_config(EmgRawDataConfig())
     await gforce.set_subscription(DataSubscription.EMG_RAW)
 
     q = await gforce.start_streaming()
