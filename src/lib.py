@@ -643,7 +643,9 @@ async def main():
 
     await gforce.connect()
     await gforce.set_emg_raw_data_config(EmgRawDataConfig())
-    await gforce.set_subscription(DataSubscription.EMG_RAW)
+    await gforce.set_subscription(
+        DataSubscription.EMG_RAW | DataSubscription.ACCELERATE
+    )
 
     q = await gforce.start_streaming()
     for _ in range(1000):
